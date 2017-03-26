@@ -1,0 +1,265 @@
+package org.heima11.mobilesafe;
+
+import java.io.File;
+
+import org.heima11.mobilesafe.constants.Constants;
+import org.heima11.mobilesafe.utils.PackageUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.lidroid.xutils.HttpUtils;
+import com.lidroid.xutils.exception.HttpException;
+import com.lidroid.xutils.http.ResponseInfo;
+import com.lidroid.xutils.http.callback.RequestCallBack;
+import com.lidroid.xutils.http.client.HttpRequest.HttpMethod;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
+import android.widget.TextView;
+import android.widget.Toast;
+
+/**
+ * @author U shift+alt+j 欢迎界面
+ */
+public class SplashActivity extends Activity {
+	private static final int DELAY_TIME = 2000;
+	protected static final int REQ_INSTALL_APK = 101;// 安装apk的请求码
+	protected static final int LOAD_MAIN = 99;// 进入主界面的消息类型
+	private String mVersionName;// 获取版本名字
+	private int mVersionCode; // 获取版本号
+	private String mDes;// 版本升级描述
+
+	// 构建Handler
+	private Handler handler=new Handler(){
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case LOAD_MAIN:
+				loadMain();
+				break;
+
+			default:
+				break;
+			}
+		};
+	};
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		// 去掉标题栏:requestWindowFeature必须在setContentView之前调用
+		// requestWindowFeature(Window.FEATURE_NO_TITLE);
+		setContentView(R.layout.activity_splash);
+		TextView tvVersion = (TextView) findViewById(R.id.tv_version);
+		// 1 获取版本名字
+		mVersionName = PackageUtils.getVersionName(this);
+		// 2 获取版本号
+		mVersionCode = PackageUtils.getVersionCode(this);
+		tvVersion.setText(mVersionName + "V" + mVersionCode);
+		// 检测版本更新
+		checkVersion();
+	}
+
+	// 检测版本更新
+	private void checkVersion() {
+		// 1 构建HttpUtils
+		HttpUtils httpUtils = new HttpUtils(3000);// 3000：链接超时时间
+		// 2 调用方法发送请求（get,post）
+		// method:请求的方式：get,post
+		// url: 请求网络地址
+		// callBack:回调结果
+		httpUtils.send(HttpMethod.GET, Constants.UPDATE_URL, new RequestCallBack<String>() {
+
+			@Override
+			public void onSuccess(ResponseInfo<String> responseInfo) {
+				// 成功
+				// 3 回调结果
+				Log.d("heima11", responseInfo.result);
+				// 解析Json
+				// 1） 构建JSONObject 对象
+				try {
+					JSONObject jsonObject = new JSONObject(responseInfo.result);
+					// 2) 获取JSONObject属性的值（key-value形式）
+
+					String versionName = jsonObject.getString("versionName");
+					int versionCode = jsonObject.getInt("versionCode");
+					mDes = jsonObject.getString("des");
+					if (mVersionCode < versionCode) {// 进行版本更新
+						// 弹出升级对话框
+						showUpdateDialog();
+					} else {
+						// 进入主界面
+						loadMainDelayTime();
+					}
+
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			}
+
+			
+
+			@Override
+			public void onFailure(HttpException error, String msg) {
+				// 失败
+				Log.e("heima11", error.getMessage());
+			}
+		});
+		// 注意：注册网络请求权限
+	}
+
+	// 弹出升级对话框
+	protected void showUpdateDialog() {
+		// 1 构建AlertDialog.Builder 对象
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setCancelable(false);// 不能被取消
+		// 2 设置标题
+		builder.setTitle("是否进行更新");
+		// 3 设置内容
+		builder.setMessage(mDes);
+		// 4 设置确定和否定按钮
+		builder.setPositiveButton("升级", new DialogInterface.OnClickListener() {
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// 下载Apk
+				Log.d("heima11", "下载apk");
+				downApk();
+			}
+		});
+
+		builder.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				// 进入主界面
+				loadMainDelayTime();
+			}
+		});
+		// 5 显示出来
+		builder.show();
+		// 6 细节要处理
+	}
+
+	// 下载Apk
+	protected void downApk() {
+		// 1 弹出进度对话框
+		// 1） 构建ProgressDialog
+		final ProgressDialog dialog = new ProgressDialog(this);
+		// 2) 设置style:水平
+		dialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+		// 3） 显示出来
+		dialog.show();
+		// // 4） 设置进度最大值
+		// dialog.setMax(100);
+		// // 5） 当前下载一个进度
+		// dialog.setProgress(50);
+
+		// 2 下载apk
+		// 1）构建HttpUtils 对象
+		HttpUtils httpUtils = new HttpUtils(3000);
+		// 2）调用下载的方法
+		// 处理sd卡不存在
+		if (!Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+			// sd不存在
+			Toast.makeText(getApplicationContext(), "sd不存在", 0).show();
+			// 进入主界面
+			loadMainDelayTime();
+			// 进度对话框销毁
+			dialog.dismiss();
+			return;
+		}
+		// 当前时间的毫秒值.apk
+		String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + System.currentTimeMillis()
+				+ ".apk";
+
+		// url:apk的网址
+		// target：下载apk后存储路径（sd卡）
+		// callback:回调结果
+		httpUtils.download(Constants.APK_URL, path, new RequestCallBack<File>() {
+
+			@Override
+			public void onSuccess(ResponseInfo<File> responseInfo) {
+				// 3）处理返回结果
+				File apkFile = responseInfo.result;
+				Log.d("heima11", apkFile.getName());
+				// 进度对话框销毁
+				dialog.dismiss();
+				// 安装apk(隐式意图)
+				// <intent-filter>
+				// <action android:name="android.intent.action.VIEW" />
+				// <category android:name="android.intent.category.DEFAULT" />
+				// <data android:scheme="content" />
+				// <data android:scheme="file" />
+				// <data
+				// android:mimeType="application/vnd.android.package-archive" />
+				// </intent-filter>
+
+				Intent intent = new Intent();
+				intent.setAction("android.intent.action.VIEW");
+				intent.addCategory("android.intent.category.DEFAULT");
+				intent.setDataAndType(Uri.fromFile(apkFile), "application/vnd.android.package-archive");
+				// 启动方式：两种:1 直接启动，获取不了返回结果 2 带请求码启动，获取返回的结果
+				startActivityForResult(intent, REQ_INSTALL_APK);// 在Activity--onActivityResult
+			}
+
+			@Override
+			public void onFailure(HttpException error, String msg) {
+				// 进度对话框销毁
+				dialog.dismiss();
+				// 进入主界面
+				loadMainDelayTime();
+			}
+
+			// 下载进度回调的方法
+			// total:下载文件的大小
+			// current：下载当前进度
+			// isUploading：是否上传
+			@Override
+			public void onLoading(long total, long current, boolean isUploading) {
+				super.onLoading(total, current, isUploading);
+				// 设置进度最大值
+				dialog.setMax((int) total);
+				// 当前下载一个进度
+				dialog.setProgress((int) current);
+			}
+		});
+
+	}
+	
+	// 延时2s入主界面
+	private void loadMainDelayTime() {
+		Message msg=Message.obtain();// 先从消息池获取，假如获取不到，产生一个Message对象
+		msg.what=LOAD_MAIN;
+		handler.sendMessageDelayed(msg, DELAY_TIME);
+	}
+	// 进入主界面
+	public void loadMain(){
+		Intent intent=new Intent(this,MainActivity.class);
+		startActivity(intent);
+		// 销毁之前的界面
+		finish();
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		Log.d("heima11", "requestCode:"+requestCode);
+		Log.d("heima11", "resultCode:"+resultCode);
+		if(requestCode==REQ_INSTALL_APK){
+			if(resultCode==Activity.RESULT_CANCELED){
+				// 延时2s进入主界面
+				loadMainDelayTime();
+			}
+		}
+	}
+}

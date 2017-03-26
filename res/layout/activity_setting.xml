@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:heima="http://schemas.android.com/apk/res/org.heima11.mobilesafe"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        style="@style/TvTitleStyle"
+        android:text="设置中心" />
+
+    <org.heima11.mobilesafe.view.SettingItemView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        heima:siv_text="刘德华" />
+
+    <org.heima11.mobilesafe.view.SettingItemView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        heima:siv_text="张学友" />
+
+    <org.heima11.mobilesafe.view.SettingItemView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        heima:siv_text="黎明" />
+
+    <org.heima11.mobilesafe.view.SettingItemView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        heima:siv_text="郭富城" />
+
+</LinearLayout>

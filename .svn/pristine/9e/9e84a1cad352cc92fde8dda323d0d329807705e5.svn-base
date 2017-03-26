@@ -1,0 +1,53 @@
+package org.heima11.mobilesafe;
+
+import android.animation.ObjectAnimator;
+import android.app.Activity;
+import android.os.Bundle;
+import android.widget.ImageView;
+
+public class MainActivity extends Activity {
+
+	private ImageView mIvHeima;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		initView();// 初始视图
+		initData();// 初始数据
+		initEvent();// 初始化事件
+	}
+
+	private void initView() {
+		setContentView(R.layout.activity_main);
+		mIvHeima = (ImageView) findViewById(R.id.iv_heima);
+	}
+
+	private void initData() {
+		// 初始动画
+		initAnim();
+	}
+
+	private void initEvent() {
+
+	}
+
+	// 初始动画
+	private void initAnim() {
+//		mIvHeima.setTranslationX(translationX);
+//		mIvHeima.setRotationY(rotationY);
+		// 1 构建ObjectAmnimator的对象
+		// target:做动画的View
+		// propertyName：view的属性
+		// values：可变数组,位移动画：0，100，200，50
+		ObjectAnimator animator = ObjectAnimator.ofFloat(mIvHeima,"rotationY",0,90,270,360);
+		// 2 设置动画执行时间
+		animator.setDuration(2000);// 执行时间是两秒
+		// 3 设置循环模式
+		animator.setRepeatCount(ObjectAnimator.INFINITE);
+		// 4 设置反转模式
+		animator.setRepeatMode(ObjectAnimator.REVERSE);
+		// 5 开启动画
+		animator.start();
+	}
+
+}

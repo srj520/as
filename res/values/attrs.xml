@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SettingItemView">
+        <attr name="siv_text" format="string|reference"></attr>
+        <attr name="siv_checked" format="boolean"></attr>
+	</declare-styleable>
+</resources>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval" >
+
+    <!-- 1 指定直径 -->
+    <corners android:radius="16dp" />
+    <!-- 2 填充颜色 -->
+    <solid android:color="@color/MWHITE" />
+    
+    <padding 
+        android:left="8dp"
+        android:top="8dp"
+        android:right="8dp"
+        android:bottom="8dp"
+        />
+</shape>

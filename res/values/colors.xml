@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    
+    <color name="MRED">#f00</color>
+    <color name="MWHITE">#fff</color>
+    <color name="MAWHITE">#2fff</color>
+</resources>
